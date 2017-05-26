@@ -4,8 +4,10 @@ import numpy as np
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 
+EPOCHS = 30
 BATCH_SIZE = 32
-DATA_TYPE = ['course1_normal1', 'course1_normal2', 'course1_backward']
+DATA_TYPE = ['track1_normal1', 'track1_normal2', 'track1_backward', 'track2_normal1', 'track2_backward']
+MODEL = 'LeNet'
 CORRECTION = 0.2
 
 samples = []
@@ -74,27 +76,24 @@ model = Sequential()
 model.add(Lambda(lambda x: x/255.0 - 0.5, input_shape=(160, 320, 3)))
 model.add(Cropping2D(cropping=((70, 25), (0, 0))))
 
-## Start of LeNet
-#model.add(Conv2D(6, (5, 5), activation='relu'))
-#model.add(MaxPooling2D())
-#model.add(Conv2D(6, (5, 5), activation='relu'))
-#model.add(MaxPooling2D())
-#model.add(Flatten())
-#model.add(Dense(120))
-#model.add(Dense(84))
-## End of LeNet
-
-## Start of NVIDIA
-model.add(Conv2D(24, (5, 5), strides=(2, 2), activation='relu'))
-model.add(Conv2D(36, (5, 5), strides=(2, 2), activation='relu'))
-model.add(Conv2D(48, (5, 5), strides=(2, 2), activation='relu'))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(Flatten())
-model.add(Dense(100))
-model.add(Dense(50))
-model.add(Dense(10))
-## End of NVIDIA
+if (MODEL == 'LeNet'):
+  model.add(Conv2D(6, (5, 5), activation='relu'))
+  model.add(MaxPooling2D())
+  model.add(Conv2D(6, (5, 5), activation='relu'))
+  model.add(MaxPooling2D())
+  model.add(Flatten())
+  model.add(Dense(120))
+  model.add(Dense(84))
+elif (MODEL == 'NVIDIA'):
+  model.add(Conv2D(24, (5, 5), strides=(2, 2), activation='relu'))
+  model.add(Conv2D(36, (5, 5), strides=(2, 2), activation='relu'))
+  model.add(Conv2D(48, (5, 5), strides=(2, 2), activation='relu'))
+  model.add(Conv2D(64, (3, 3), activation='relu'))
+  model.add(Conv2D(64, (3, 3), activation='relu'))
+  model.add(Flatten())
+  model.add(Dense(100))
+  model.add(Dense(50))
+  model.add(Dense(10))
 
 model.add(Dense(1))
 
@@ -104,9 +103,9 @@ history_object = model.fit_generator(
         steps_per_epoch = len(train_samples) // BATCH_SIZE + 1, 
         validation_data = validation_generator, 
         validation_steps = len(validation_samples) // BATCH_SIZE + 1,
-        epochs=10)
+        epochs=EPOCHS)
 
-model.save('model.h5')
+model.save('model'+MODEL+'.h5')
 
 K.clear_session()
 
