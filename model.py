@@ -5,19 +5,37 @@ from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 
 BATCH_SIZE = 32
-DATA_TYPE = ['course1_normal1', 'course1_normal2']
-#DATA_TYPE = ['course1_normal1']
+DATA_TYPE = ['course1_normal1', 'course1_normal2', 'course1_backward']
+CORRECTION = 0.2
 
 samples = []
 for datum in DATA_TYPE:
   with open('./data/'+datum+'/driving_log.csv') as csvfile:
     reader = csv.reader(csvfile)
     for line in reader:
+      #Load center, normal image
       line[0] = './data/'+datum+'/IMG/'+line[0].split('/')[-1]
-      line.append(1)
-      samples.append(line)
+      line.append(1) #This flag is indicating normal image
+      samples.append(line.copy())
+      #Load center, flipped image
       line[-1] = -1
-      samples.append(line)
+      samples.append(line.copy())
+      #Load left, normal image
+      line[0] = './data/'+datum+'/IMG/'+line[1].split('/')[-1]
+      line[3] = float(line[3]) + CORRECTION
+      line[-1] = 1
+      samples.append(line.copy())
+      #Load left, flipped image
+      line[-1] = -1
+      samples.append(line.copy())
+      #Load right, normal image
+      line[0] = './data/'+datum+'/IMG/'+line[2].split('/')[-1]
+      line[3] = line[3] - CORRECTION * 2
+      line[-1] = 1
+      samples.append(line.copy())
+      #Load left, flipped image
+      line[-1] = -1
+      samples.append(line.copy())
 
 def generator(samples, batch_size=32):
   num_samples = len(samples)
@@ -30,13 +48,13 @@ def generator(samples, batch_size=32):
       angles = []
 
       for batch_sample in batch_samples:
-        center_image = cv2.imread(batch_sample[0])
-        center_angle = float(batch_sample[3])
+        image = cv2.imread(batch_sample[0])
+        angle = float(batch_sample[3])
         if (batch_sample[-1] == -1):
-          center_image = np.fliplr(center_image)
-          center_angle = - center_angle
-        images.append(center_image)
-        angles.append(center_angle)
+          image = np.fliplr(image)
+          angle = -angle
+        images.append(image)
+        angles.append(angle)
 
       X_train = np.array(images)
       y_train = np.array(angles)
@@ -57,25 +75,25 @@ model.add(Lambda(lambda x: x/255.0 - 0.5, input_shape=(160, 320, 3)))
 model.add(Cropping2D(cropping=((70, 25), (0, 0))))
 
 ## Start of LeNet
-model.add(Conv2D(6, (5, 5), activation='relu'))
-model.add(MaxPooling2D())
-model.add(Conv2D(6, (5, 5), activation='relu'))
-model.add(MaxPooling2D())
-model.add(Flatten())
-model.add(Dense(120))
-model.add(Dense(84))
+#model.add(Conv2D(6, (5, 5), activation='relu'))
+#model.add(MaxPooling2D())
+#model.add(Conv2D(6, (5, 5), activation='relu'))
+#model.add(MaxPooling2D())
+#model.add(Flatten())
+#model.add(Dense(120))
+#model.add(Dense(84))
 ## End of LeNet
 
 ## Start of NVIDIA
-#model.add(Conv2D(24, (5, 5), strides=(2, 2), activation='relu'))
-#model.add(Conv2D(36, (5, 5), strides=(2, 2), activation='relu'))
-#model.add(Conv2D(48, (5, 5), strides=(2, 2), activation='relu'))
-#model.add(Conv2D(64, (3, 3), activation='relu'))
-#model.add(Conv2D(64, (3, 3), activation='relu'))
-#model.add(Flatten())
-#model.add(Dense(100))
-#model.add(Dense(50))
-#model.add(Dense(10))
+model.add(Conv2D(24, (5, 5), strides=(2, 2), activation='relu'))
+model.add(Conv2D(36, (5, 5), strides=(2, 2), activation='relu'))
+model.add(Conv2D(48, (5, 5), strides=(2, 2), activation='relu'))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Flatten())
+model.add(Dense(100))
+model.add(Dense(50))
+model.add(Dense(10))
 ## End of NVIDIA
 
 model.add(Dense(1))
