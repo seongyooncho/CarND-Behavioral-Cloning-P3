@@ -1,20 +1,23 @@
 import csv
 import cv2
 import numpy as np
-import gc
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 
 BATCH_SIZE = 32
+DATA_TYPE = ['course1_normal1', 'course1_normal2']
+#DATA_TYPE = ['course1_normal1']
 
 samples = []
-with open('./data/driving_log.csv') as csvfile:
-  reader = csv.reader(csvfile)
-  for line in reader:
-    line.append(1)
-    samples.append(line)
-    line[-1] = -1
-    samples.append(line)
+for datum in DATA_TYPE:
+  with open('./data/'+datum+'/driving_log.csv') as csvfile:
+    reader = csv.reader(csvfile)
+    for line in reader:
+      line[0] = './data/'+datum+'/IMG/'+line[0].split('/')[-1]
+      line.append(1)
+      samples.append(line)
+      line[-1] = -1
+      samples.append(line)
 
 def generator(samples, batch_size=32):
   num_samples = len(samples)
@@ -27,8 +30,7 @@ def generator(samples, batch_size=32):
       angles = []
 
       for batch_sample in batch_samples:
-        name = './data/IMG/'+batch_sample[0].split('/')[-1]
-        center_image = cv2.imread(name)
+        center_image = cv2.imread(batch_sample[0])
         center_angle = float(batch_sample[3])
         if (batch_sample[-1] == -1):
           center_image = np.fliplr(center_image)
@@ -48,17 +50,34 @@ from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Cropping2D
 from keras.layers.convolutional import Conv2D
 from keras.layers.pooling import MaxPooling2D
+from keras import backend as K
 
 model = Sequential()
 model.add(Lambda(lambda x: x/255.0 - 0.5, input_shape=(160, 320, 3)))
-model.add(Cropping2D(cropping=((75, 20), (0, 0))))
-model.add(Conv2D(6, 5, 5, activation='relu'))
+model.add(Cropping2D(cropping=((70, 25), (0, 0))))
+
+## Start of LeNet
+model.add(Conv2D(6, (5, 5), activation='relu'))
 model.add(MaxPooling2D())
-model.add(Conv2D(6, 5, 5, activation='relu'))
+model.add(Conv2D(6, (5, 5), activation='relu'))
 model.add(MaxPooling2D())
 model.add(Flatten())
 model.add(Dense(120))
 model.add(Dense(84))
+## End of LeNet
+
+## Start of NVIDIA
+#model.add(Conv2D(24, (5, 5), strides=(2, 2), activation='relu'))
+#model.add(Conv2D(36, (5, 5), strides=(2, 2), activation='relu'))
+#model.add(Conv2D(48, (5, 5), strides=(2, 2), activation='relu'))
+#model.add(Conv2D(64, (3, 3), activation='relu'))
+#model.add(Conv2D(64, (3, 3), activation='relu'))
+#model.add(Flatten())
+#model.add(Dense(100))
+#model.add(Dense(50))
+#model.add(Dense(10))
+## End of NVIDIA
+
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
@@ -71,7 +90,7 @@ history_object = model.fit_generator(
 
 model.save('model.h5')
 
-gc.collect()
+K.clear_session()
 
 import matplotlib as mpl
 mpl.use('Agg')
