@@ -119,7 +119,7 @@ model.add(Dense(1))
 model.compile(loss='mse', optimizer='adam')
 
 # Plot model
-plot_model(model, to_file='model.png')
+plot_model(model, show_shapes=True, to_file='examples/model.png')
 
 # Run generator
 history_object = model.fit_generator(
@@ -149,4 +149,4 @@ plt.title('model mean squared error loss')
 plt.ylabel('mean squared error loss')
 plt.xlabel('epoch')
 plt.legend(['training set', 'validation set'], loc='upper right')
-plt.savefig('history.png')
+plt.savefig('examples/history.png')
