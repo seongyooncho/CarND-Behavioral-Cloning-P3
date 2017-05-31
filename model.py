@@ -4,13 +4,21 @@ import numpy as np
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 
+# Define constants used for training
 EPOCHS = 30
 BATCH_SIZE = 32
-#DATA_TYPE = ['track1_normal1', 'track1_normal2', 'track1_backward', 'track2_normal1', 'track2_backward']
+
+# Select recorded data type
+# DATA_TYPE = ['track1_normal1', 'track1_normal2', 'track1_backward', 'track2_normal1', 'track2_backward']
 DATA_TYPE = ['track1_normal1', 'track1_normal2', 'track1_backward']
-MODEL = 'LeNet'
+
+# Select model: LeNet or NVIDIA
+MODEL = 'NVIDIA'
+
+# Angle correction for left or right camera image
 CORRECTION = 0.2
 
+# Load selected data from data folder. Prepare for augmentation (flip, left, right)
 samples = []
 for datum in DATA_TYPE:
   with open('./data/'+datum+'/driving_log.csv') as csvfile:
@@ -40,6 +48,7 @@ for datum in DATA_TYPE:
       line[-1] = -1
       samples.append(line.copy())
 
+# Define generator function for training
 def generator(samples, batch_size=32):
   num_samples = len(samples)
   while 1:
@@ -63,7 +72,10 @@ def generator(samples, batch_size=32):
       y_train = np.array(angles)
       yield shuffle(X_train, y_train)
 
+# Split samples into train and validation set
 train_samples, validation_samples = train_test_split(samples, test_size=0.2)
+
+# Set generators
 train_generator = generator(train_samples, batch_size = BATCH_SIZE)
 validation_generator = generator(validation_samples, batch_size = BATCH_SIZE)
 
@@ -74,10 +86,12 @@ from keras.layers.pooling import MaxPooling2D
 from keras.callbacks import EarlyStopping
 from keras import backend as K
 
+# Define Keras model
 model = Sequential()
 model.add(Lambda(lambda x: x/255.0 - 0.5, input_shape=(160, 320, 3)))
 model.add(Cropping2D(cropping=((70, 25), (0, 0))))
 
+# LeNet model
 if (MODEL == 'LeNet'):
   model.add(Conv2D(6, (5, 5), activation='relu'))
   model.add(MaxPooling2D())
@@ -86,6 +100,8 @@ if (MODEL == 'LeNet'):
   model.add(Flatten())
   model.add(Dense(120))
   model.add(Dense(84))
+
+# NVIDIA model
 elif (MODEL == 'NVIDIA'):
   model.add(Conv2D(24, (5, 5), strides=(2, 2), activation='relu'))
   model.add(Conv2D(36, (5, 5), strides=(2, 2), activation='relu'))
@@ -108,12 +124,15 @@ history_object = model.fit_generator(
         epochs=EPOCHS,
         callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=1, mode='auto')])
 
+# Save model to file
 model_filename = 'model_' + MODEL + '.h5'
 model.save(model_filename)
 print('Model saved to ' + model_filename)
 
+# Clear session
 K.clear_session()
 
+# Plot and save history image using matplotlib
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
