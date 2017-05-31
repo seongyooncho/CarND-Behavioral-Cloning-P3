@@ -84,6 +84,7 @@ from keras.layers import Flatten, Dense, Lambda, Cropping2D
 from keras.layers.convolutional import Conv2D
 from keras.layers.pooling import MaxPooling2D
 from keras.callbacks import EarlyStopping
+from keras.utils import plot_model
 from keras import backend as K
 
 # Define Keras model
@@ -116,6 +117,11 @@ elif (MODEL == 'NVIDIA'):
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
+
+# Plot model
+plot_model(model, to_file='model.png')
+
+# Run generator
 history_object = model.fit_generator(
         train_generator, 
         steps_per_epoch = len(train_samples) // BATCH_SIZE + 1, 
