@@ -6,7 +6,8 @@ from sklearn.model_selection import train_test_split
 
 EPOCHS = 30
 BATCH_SIZE = 32
-DATA_TYPE = ['track1_normal1', 'track1_normal2', 'track1_backward', 'track2_normal1', 'track2_backward']
+#DATA_TYPE = ['track1_normal1', 'track1_normal2', 'track1_backward', 'track2_normal1', 'track2_backward']
+DATA_TYPE = ['track1_normal1', 'track1_normal2', 'track1_backward']
 MODEL = 'LeNet'
 CORRECTION = 0.2
 
@@ -70,6 +71,7 @@ from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Cropping2D
 from keras.layers.convolutional import Conv2D
 from keras.layers.pooling import MaxPooling2D
+from keras.callbacks import EarlyStopping
 from keras import backend as K
 
 model = Sequential()
@@ -103,9 +105,12 @@ history_object = model.fit_generator(
         steps_per_epoch = len(train_samples) // BATCH_SIZE + 1, 
         validation_data = validation_generator, 
         validation_steps = len(validation_samples) // BATCH_SIZE + 1,
-        epochs=EPOCHS)
+        epochs=EPOCHS,
+        callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=1, mode='auto')])
 
-model.save('model'+MODEL+'.h5')
+model_filename = 'model_' + MODEL + '.h5'
+model.save(model_filename)
+print('Model saved to ' + model_filename)
 
 K.clear_session()
 
